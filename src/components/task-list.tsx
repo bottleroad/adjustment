@@ -1,66 +1,21 @@
 "use client"
 
 import { useState } from 'react'
-import { Star, Trash2 } from 'lucide-react'
-import { Checkbox } from '@/components/ui/checkbox'
 import { useTask } from '@/contexts/TaskContext'
-
-interface Task {
-  id: number
-  title: string
-  date: string
-  completed: boolean
-  important: boolean
-  amount: number
-  cardType: 'shinhan' | 'hyundai' | 'samsung' | 'other'
-  store: string
-  time: string
-}
-
-const initialTasks: Task[] = [
-  {
-    id: 1,
-    title: "Complete project proposal",
-    date: "2024. 4. 13.",
-    completed: false,
-    important: true,
-    amount: 50000,
-    cardType: 'shinhan',
-    store: "일시불",
-    time: "10:00"
-  },
-  {
-    id: 2,
-    title: "Schedule team meeting",
-    date: "2024. 4. 13.",
-    completed: false,
-    important: false,
-    amount: 30000,
-    cardType: 'hyundai',
-    store: "할부",
-    time: "11:00"
-  }
-]
+import { Trash2 } from 'lucide-react'
 
 type FilterType = 'all' | 'single' | 'installment';
 
 export default function TaskList() {
-  const { tasks, toggleTaskCompletion, deleteTask, deleteAllTasks } = useTask()
+  const { tasks, toggleTaskCompletion, deleteTask } = useTask()
   const [filter, setFilter] = useState<FilterType>('all')
-
-  const totalAmount = tasks.reduce((sum, task) => sum + task.amount, 0)
-  
-  const cardTotals = tasks.reduce((acc, task) => {
-    acc[task.cardType] = (acc[task.cardType] || 0) + task.amount
-    return acc
-  }, {} as Record<string, number>)
 
   const filteredTasks = tasks.filter(task => {
     if (filter === 'single') {
       return task.store.includes('일시불');
     }
     if (filter === 'installment') {
-      return !task.store.includes('일시불');  // 일시불이 아닌 모든 경우를 할부로 처리
+      return !task.store.includes('일시불');
     }
     return true;
   })
@@ -68,17 +23,6 @@ export default function TaskList() {
   const handleDeleteTask = (taskId: number) => {
     if (window.confirm('이 항목을 삭제하시겠습니까?')) {
       deleteTask(taskId)
-    }
-  }
-
-  const handleDeleteAll = () => {
-    if (window.confirm('일시불 항목을 모두 삭제하시겠습니까?')) {
-      // 일시불 항목만 찾아서 삭제
-      tasks.forEach(task => {
-        if (task.store.includes('일시불')) {
-          deleteTask(task.id);
-        }
-      });
     }
   }
 
@@ -150,19 +94,6 @@ export default function TaskList() {
           </div>
         ))}
       </div>
-
-      {/* 전체 보기에서만 전체 삭제 버튼 표시 */}
-      {filter === 'all' && tasks.some(task => task.store.includes('일시불')) && (
-        <div className="mt-6">
-          <button
-            onClick={handleDeleteAll}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            <Trash2 className="w-5 h-5" />
-            전체 삭제
-          </button>
-        </div>
-      )}
     </div>
   )
 } 

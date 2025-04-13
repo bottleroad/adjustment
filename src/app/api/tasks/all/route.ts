@@ -6,7 +6,7 @@ export async function DELETE() {
     // Clear all tasks
     writeDB({ tasks: [] });
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to delete all tasks' }, { status: 500 });
   }
 } 

@@ -14,7 +14,7 @@ export const readDB = (): DB => {
   try {
     const data = fs.readFileSync(DB_PATH, 'utf-8');
     return JSON.parse(data);
-  } catch (error) {
+  } catch {
     // If file doesn't exist or is corrupted, return empty DB
     return { tasks: [] };
   }
@@ -24,8 +24,7 @@ export const readDB = (): DB => {
 export const writeDB = (db: DB): void => {
   try {
     fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
-  } catch (error) {
-    console.error('Error writing to database:', error);
+  } catch {
     throw new Error('Failed to write to database');
   }
 };

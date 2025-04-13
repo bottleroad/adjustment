@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const tasks = getAllTasks();
     return NextResponse.json(tasks);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch tasks' }, { status: 500 });
   }
 }
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const task: Task = await request.json();
     addTaskToDB(task);
     return NextResponse.json(task);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to add task' }, { status: 500 });
   }
 }
@@ -26,7 +26,7 @@ export async function PUT(request: Request) {
     const { id, updates } = await request.json();
     updateTaskInDB(id, updates);
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
   }
 }
@@ -36,7 +36,7 @@ export async function DELETE(request: Request) {
     const { id } = await request.json();
     deleteTaskFromDB(id);
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
   }
 } 
