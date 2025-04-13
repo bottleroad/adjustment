@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const { id, updates } = await request.json();
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('tasks')
       .update(updates)
       .eq('id', id)
