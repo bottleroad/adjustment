@@ -88,7 +88,7 @@ export default function TaskList() {
                   {task.title}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {task.store} • {task.amount.toLocaleString()}원 • {task.time}
+                  {task.amount.toLocaleString()}원 • {task.date} • {task.time} 
                 </p>
               </div>
             </div>
