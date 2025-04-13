@@ -6,12 +6,17 @@ export async function DELETE() {
     const { error } = await supabase
       .from('tasks')
       .delete()
-      .neq('id', 0); // Delete all records
+      .neq('id', 0); // Delete all tasks except id 0 if exists
 
-    if (error) throw error;
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Failed to delete all tasks:', error);
-    return NextResponse.json({ error: 'Failed to delete all tasks' }, { status: 500 });
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json({ message: 'All tasks deleted successfully' });
+  } catch {
+    return NextResponse.json(
+      { error: 'Failed to delete all tasks' },
+      { status: 500 }
+    );
   }
 } 

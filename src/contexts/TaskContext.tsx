@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 export interface Task {
   id: number
   title: string
-  cardType: 'shinhan' | 'hyundai' | 'samsung' | 'bc' | 'kb' | 'lotte' | 'other'
+  card_type: 'shinhan' | 'hyundai' | 'samsung' | 'bc' | 'kb' | 'lotte' | 'other'
   amount: number
   time: string
   store: string
@@ -61,15 +61,15 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
       '롯데': 'lotte'
     } as const
 
-    let cardType: Task['cardType'] = 'other'
+    let card_type: Task['card_type'] = 'other'
     let amount = 0
     let time = ''
-    let store = ''
+    let store = '할부' // 기본값을 할부로 설정
 
     // Parse card type
     for (const [key, value] of Object.entries(cardTypes)) {
       if (memo.includes(key)) {
-        cardType = value
+        card_type = value
         break
       }
     }
@@ -86,11 +86,12 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
       time = timeMatch[1]
     }
 
-    // Parse store name (마지막 줄을 상점명으로 가정)
-    const lines = memo.trim().split('\n')
-    store = lines[lines.length - 1].trim()
+    // 일시불 여부 확인
+    if (memo.includes('일시불')) {
+      store = '일시불'
+    }
 
-    return { cardType, amount, time, store }
+    return { card_type, amount, time, store }
   }
 
   const addTask = async (input: AddTaskInput) => {
@@ -100,7 +101,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
       const newTask: Task = {
         id: Date.now(),
         title: input.title,
-        cardType: parsedData.cardType,
+        card_type: parsedData.card_type,
         amount: parsedData.amount,
         time: parsedData.time,
         store: parsedData.store,
@@ -166,7 +167,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
   // Calculate totals
   const totalAmount = tasks.reduce((sum, task) => sum + task.amount, 0)
   const cardTotals = tasks.reduce((totals, task) => {
-    totals[task.cardType] = (totals[task.cardType] || 0) + task.amount
+    totals[task.card_type] = (totals[task.card_type] || 0) + task.amount
     return totals
   }, {} as Record<string, number>)
 

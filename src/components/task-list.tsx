@@ -7,7 +7,7 @@ import { Trash2, CreditCard, Clock } from 'lucide-react'
 type FilterType = 'all' | 'single' | 'installment';
 
 export default function TaskList() {
-  const { tasks, deleteTask, deleteAllTasks } = useTask()
+  const { tasks, deleteTask } = useTask()
   const [filter, setFilter] = useState<FilterType>('all')
 
   const filteredTasks = tasks.filter(task => {
@@ -28,7 +28,11 @@ export default function TaskList() {
 
   const handleDeleteAll = () => {
     if (window.confirm('일시불 항목을 모두 삭제하시겠습니까?')) {
-      deleteAllTasks();
+      tasks.forEach(task => {
+        if (task.store.includes('일시불')) {
+          deleteTask(task.id);
+        }
+      });
     }
   }
 
@@ -80,9 +84,7 @@ export default function TaskList() {
                 <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               )}
               <div>
-                <p className={`text-sm font-medium ${
-                  task.completed ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'
-                }`}>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
                   {task.title}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -100,7 +102,6 @@ export default function TaskList() {
         ))}
       </div>
 
-      {/* 전체 보기에서만 전체 삭제 버튼 표시 */}
       {filter === 'all' && tasks.some(task => task.store.includes('일시불')) && (
         <div className="mt-6">
           <button
