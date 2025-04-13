@@ -83,7 +83,9 @@ export default function Home() {
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Monthly Adjustment</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {new Date().toLocaleString('ko-KR', { month: 'long' })} 정산
+            </h2>
             <button 
               onClick={() => setIsDialogOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
