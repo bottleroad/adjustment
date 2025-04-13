@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import { useTask } from '@/contexts/TaskContext'
-import { Trash2 } from 'lucide-react'
+import { Trash2, CreditCard, Clock } from 'lucide-react'
 
 type FilterType = 'all' | 'single' | 'installment';
 
 export default function TaskList() {
-  const { tasks, toggleTaskCompletion, deleteTask } = useTask()
+  const { tasks, toggleTaskCompletion, deleteTask, deleteAllTasks } = useTask()
   const [filter, setFilter] = useState<FilterType>('all')
 
   const filteredTasks = tasks.filter(task => {
@@ -23,6 +23,17 @@ export default function TaskList() {
   const handleDeleteTask = (taskId: number) => {
     if (window.confirm('이 항목을 삭제하시겠습니까?')) {
       deleteTask(taskId)
+    }
+  }
+
+  const handleDeleteAll = () => {
+    if (window.confirm('일시불 항목을 모두 삭제하시겠습니까?')) {
+      // 일시불 항목만 찾아서 삭제
+      tasks.forEach(task => {
+        if (task.store.includes('일시불')) {
+          deleteTask(task.id);
+        }
+      });
     }
   }
 
@@ -68,12 +79,11 @@ export default function TaskList() {
             className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
           >
             <div className="flex items-center space-x-4">
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={() => toggleTaskCompletion(task.id)}
-                className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-              />
+              {task.store.includes('일시불') ? (
+                <CreditCard className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              ) : (
+                <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              )}
               <div>
                 <p className={`text-sm font-medium ${
                   task.completed ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'
@@ -94,6 +104,19 @@ export default function TaskList() {
           </div>
         ))}
       </div>
+
+      {/* 전체 보기에서만 전체 삭제 버튼 표시 */}
+      {filter === 'all' && tasks.some(task => task.store.includes('일시불')) && (
+        <div className="mt-6">
+          <button
+            onClick={handleDeleteAll}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Trash2 className="w-5 h-5" />
+            전체 삭제
+          </button>
+        </div>
+      )}
     </div>
   )
 } 
