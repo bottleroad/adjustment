@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server';
-import { getAllTasks, addTaskToDB, updateTaskInDB, deleteTaskFromDB } from '../utils/db';
+import { supabase } from '@/lib/supabase';
 import { Task } from '@/contexts/TaskContext';
 
 export async function GET() {
   try {
-    const tasks = getAllTasks();
-    return NextResponse.json(tasks);
-  } catch {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Failed to fetch tasks:', error);
     return NextResponse.json({ error: 'Failed to fetch tasks' }, { status: 500 });
   }
 }
@@ -14,9 +20,16 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const task: Task = await request.json();
-    addTaskToDB(task);
-    return NextResponse.json(task);
-  } catch {
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert([task])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Failed to add task:', error);
     return NextResponse.json({ error: 'Failed to add task' }, { status: 500 });
   }
 }
@@ -24,9 +37,17 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const { id, updates } = await request.json();
-    updateTaskInDB(id, updates);
+    const { data, error } = await supabase
+      .from('tasks')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error('Failed to update task:', error);
     return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
   }
 }
@@ -34,9 +55,15 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const { id } = await request.json();
-    deleteTaskFromDB(id);
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error('Failed to delete task:', error);
     return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
   }
 } 

@@ -1,16 +1,6 @@
 {
   "tasks": [
     {
-      "id": 1744529499789,
-      "title": "test",
-      "cardType": "samsung",
-      "amount": 31200,
-      "time": "21:15",
-      "store": "일시불",
-      "date": "2025. 4. 13.",
-      "completed": false
-    },
-    {
       "id": 1744529662010,
       "title": "asdfasdf",
       "cardType": "samsung",

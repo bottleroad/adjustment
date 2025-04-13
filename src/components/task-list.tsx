@@ -7,7 +7,7 @@ import { Trash2, CreditCard, Clock } from 'lucide-react'
 type FilterType = 'all' | 'single' | 'installment';
 
 export default function TaskList() {
-  const { tasks, deleteTask } = useTask()
+  const { tasks, deleteTask, deleteAllTasks } = useTask()
   const [filter, setFilter] = useState<FilterType>('all')
 
   const filteredTasks = tasks.filter(task => {
@@ -28,12 +28,7 @@ export default function TaskList() {
 
   const handleDeleteAll = () => {
     if (window.confirm('일시불 항목을 모두 삭제하시겠습니까?')) {
-      // 일시불 항목만 찾아서 삭제
-      tasks.forEach(task => {
-        if (task.store.includes('일시불')) {
-          deleteTask(task.id);
-        }
-      });
+      deleteAllTasks();
     }
   }
 

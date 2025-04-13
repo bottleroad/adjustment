@@ -10,153 +10,123 @@ export interface Task {
   time: string
   store: string
   date: string
-  completed: boolean
 }
 
 interface AddTaskInput {
   title: string
-  memo: string  // Message content for parsing card information
+  memo: string
 }
 
 interface TaskContextType {
   tasks: Task[]
-  addTask: (input: AddTaskInput) => void
-  toggleTaskCompletion: (taskId: number) => void
-  deleteTask: (taskId: number) => void
-  deleteAllTasks: () => void
+  addTask: (input: AddTaskInput) => Promise<void>
+  deleteTask: (taskId: number) => Promise<void>
+  deleteAllTasks: () => Promise<void>
   totalAmount: number
   cardTotals: Record<string, number>
+  isLoading: boolean
 }
 
-const TaskContext = createContext<TaskContextType | undefined>(undefined);
+const TaskContext = createContext<TaskContextType | undefined>(undefined)
 
 export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
   const [tasks, setTasks] = useState<Task[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
-  // Load tasks from API on mount
   useEffect(() => {
-    const loadTasks = async () => {
+    const fetchTasks = async () => {
+      setIsLoading(true)
       try {
-        const response = await fetch('/api/tasks');
-        const data = await response.json();
-        setTasks(data);
+        const response = await fetch('/api/tasks')
+        if (!response.ok) throw new Error('Failed to fetch tasks')
+        const data = await response.json()
+        setTasks(data)
       } catch (error) {
-        console.error('Failed to load tasks:', error);
+        console.error('Failed to fetch tasks:', error)
+      } finally {
+        setIsLoading(false)
       }
-    };
-    loadTasks();
-  }, []);
+    }
 
-  const totalAmount = tasks.reduce((sum, task) => sum + task.amount, 0)
-  
-  const cardTotals = tasks.reduce((acc, task) => {
-    acc[task.cardType] = (acc[task.cardType] || 0) + task.amount
-    return acc
-  }, {} as Record<string, number>)
+    fetchTasks()
+  }, [])
 
-  const parseCardMessage = (memo: string): { cardType: Task['cardType']; amount: number; time: string; store: string } => {
-    // Remove "[Web발신]" and split into lines
-    const lines = memo
-      .replace(/\[Web발신\]/g, '')
-      .split('\n')
-      .filter(line => line.trim() !== '');
+  const parseCardMessage = (memo: string) => {
+    const cardTypes = {
+      '신한': 'shinhan',
+      '현대': 'hyundai',
+      '삼성': 'samsung',
+      'BC': 'bc',
+      'KB': 'kb',
+      '롯데': 'lotte'
+    } as const
 
-    // Get the first line and extract first two syllables for card type detection
-    const firstLine = lines[0] || '';
-    const firstTwoSyllables = firstLine.slice(0, 2);
-    
-    // Extract card type from the first two syllables
-    let cardType: Task['cardType'] = 'other';
-    if (firstTwoSyllables === '신한') cardType = 'shinhan';
-    else if (firstTwoSyllables === '현대') cardType = 'hyundai';
-    else if (firstTwoSyllables === '삼성') cardType = 'samsung';
-    else if (firstTwoSyllables === 'BC') cardType = 'bc';
-    else if (firstTwoSyllables === 'KB') cardType = 'kb';
-    else if (firstTwoSyllables === '롯데') cardType = 'lotte';
+    let cardType: Task['cardType'] = 'other'
+    let amount = 0
+    let time = ''
+    let store = ''
 
-    // Filter out cumulative amount lines and join remaining lines
-    const cleanedMemo = lines
-      .filter(line => !line.includes('누적'))
-      .join('\n');
+    // Parse card type
+    for (const [key, value] of Object.entries(cardTypes)) {
+      if (memo.includes(key)) {
+        cardType = value
+        break
+      }
+    }
 
-    // Extract amount (assuming format like "12,000원")
-    const amountMatch = cleanedMemo.match(/[\d,]+원/);
-    const amount = amountMatch 
-      ? parseInt(amountMatch[0].replace(/[,원]/g, ''))
-      : 0;
+    // Parse amount (숫자와 '원' 사이의 값)
+    const amountMatch = memo.match(/(\d{1,3}(,\d{3})*|\d+)원/)
+    if (amountMatch) {
+      amount = parseInt(amountMatch[1].replace(/,/g, ''))
+    }
 
-    // Extract time (assuming format like "12:34")
-    const timeMatch = cleanedMemo.match(/\d{2}:\d{2}/);
-    const time = timeMatch ? timeMatch[0] : '';
+    // Parse time (시:분 형식)
+    const timeMatch = memo.match(/(\d{1,2}:\d{2})/)
+    if (timeMatch) {
+      time = timeMatch[1]
+    }
 
-    // Extract store name (assuming it's after the amount)
-    const storeMatch = cleanedMemo.match(/[\d,]+원\s+(.+?)(?:\s+\d|$)/);
-    const store = storeMatch ? storeMatch[1].trim() : '';
+    // Parse store name (마지막 줄을 상점명으로 가정)
+    const lines = memo.trim().split('\n')
+    store = lines[lines.length - 1].trim()
 
-    return { cardType, amount, time, store };
-  };
+    return { cardType, amount, time, store }
+  }
 
   const addTask = async (input: AddTaskInput) => {
-    const parsedData = parseCardMessage(input.memo);
-    
-    const newTask: Task = {
-      id: Date.now(),
-      title: input.title,
-      cardType: parsedData.cardType,
-      amount: parsedData.amount,
-      time: parsedData.time,
-      store: parsedData.store,
-      date: new Date().toLocaleDateString('ko-KR'),
-      completed: false,
-    };
-
+    setIsLoading(true)
     try {
-      // Add task through API
+      const parsedData = parseCardMessage(input.memo)
+      const newTask: Task = {
+        id: Date.now(),
+        title: input.title,
+        cardType: parsedData.cardType,
+        amount: parsedData.amount,
+        time: parsedData.time,
+        store: parsedData.store,
+        date: new Date().toLocaleDateString('ko-KR'),
+      }
+
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(newTask),
-      });
+      })
 
-      if (!response.ok) throw new Error('Failed to add task');
-
-      // Update local state
-      setTasks(prev => [...prev, newTask]);
+      if (!response.ok) throw new Error('Failed to add task')
+      setTasks(prev => [...prev, newTask])
     } catch (error) {
-      console.error('Failed to add task:', error);
+      console.error('Failed to add task:', error)
+      throw error
+    } finally {
+      setIsLoading(false)
     }
-  };
-
-  const toggleTaskCompletion = async (taskId: number) => {
-    try {
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return;
-
-      const updates = { completed: !task.completed };
-
-      // Update through API
-      const response = await fetch('/api/tasks', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: taskId, updates }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update task');
-
-      // Update local state
-      setTasks(prev => prev.map(task =>
-        task.id === taskId ? { ...task, ...updates } : task
-      ));
-    } catch (error) {
-      console.error('Failed to toggle completion:', error);
-    }
-  };
+  }
 
   const deleteTask = async (taskId: number) => {
+    setIsLoading(true)
     try {
       const response = await fetch('/api/tasks', {
         method: 'DELETE',
@@ -164,40 +134,52 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ id: taskId }),
-      });
+      })
 
-      if (!response.ok) throw new Error('Failed to delete task');
-
-      setTasks(prev => prev.filter(task => task.id !== taskId));
+      if (!response.ok) throw new Error('Failed to delete task')
+      setTasks(prev => prev.filter(task => task.id !== taskId))
     } catch (error) {
-      console.error('Failed to delete task:', error);
+      console.error('Failed to delete task:', error)
+      throw error
+    } finally {
+      setIsLoading(false)
     }
-  };
+  }
 
   const deleteAllTasks = async () => {
+    setIsLoading(true)
     try {
       const response = await fetch('/api/tasks/all', {
         method: 'DELETE',
-      });
+      })
 
-      if (!response.ok) throw new Error('Failed to delete all tasks');
-
-      setTasks([]);
+      if (!response.ok) throw new Error('Failed to delete all tasks')
+      setTasks([])
     } catch (error) {
-      console.error('Failed to delete all tasks:', error);
+      console.error('Failed to delete all tasks:', error)
+      throw error
+    } finally {
+      setIsLoading(false)
     }
-  };
+  }
+
+  // Calculate totals
+  const totalAmount = tasks.reduce((sum, task) => sum + task.amount, 0)
+  const cardTotals = tasks.reduce((totals, task) => {
+    totals[task.cardType] = (totals[task.cardType] || 0) + task.amount
+    return totals
+  }, {} as Record<string, number>)
 
   return (
     <TaskContext.Provider
       value={{
         tasks,
         addTask,
-        toggleTaskCompletion,
         deleteTask,
         deleteAllTasks,
         totalAmount,
         cardTotals,
+        isLoading
       }}
     >
       {children}
