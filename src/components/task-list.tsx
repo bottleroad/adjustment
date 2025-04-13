@@ -7,7 +7,7 @@ import { Trash2, CreditCard, Clock } from 'lucide-react'
 type FilterType = 'all' | 'single' | 'installment';
 
 export default function TaskList() {
-  const { tasks, toggleTaskCompletion, deleteTask, deleteAllTasks } = useTask()
+  const { tasks, deleteTask } = useTask()
   const [filter, setFilter] = useState<FilterType>('all')
 
   const filteredTasks = tasks.filter(task => {
