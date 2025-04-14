@@ -106,10 +106,10 @@ export default function Home() {
             </h1>
             <button
               onClick={() => setShowChart(true)}
-              className="p-3 text-purple-600 hover:text-white dark:text-purple-400 dark:hover:text-white border-2 border-purple-600 dark:border-purple-400 focus:outline-none rounded-lg hover:bg-gradient-to-r from-purple-600 to-blue-600 dark:hover:bg-gradient-to-r dark:from-purple-600 dark:to-blue-600 transition-all duration-300"
+              className="p-2 text-purple-600 hover:text-white dark:text-purple-400 dark:hover:text-white border-2 border-purple-600 dark:border-purple-400 focus:outline-none rounded-lg hover:bg-gradient-to-r from-purple-600 to-blue-600 dark:hover:bg-gradient-to-r dark:from-purple-600 dark:to-blue-600 transition-all duration-300"
               aria-label="월별 정산 그래프 보기"
             >
-              <BarChart className="w-8 h-8" />
+              <BarChart className="w-6 h-6" />
             </button>
           </div>
         </div>
