@@ -69,6 +69,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     let time = ''
     let store = '할부'
     let usage = ''
+    let date = ''
 
     // Parse card type
     for (const [key, value] of Object.entries(cardTypes)) {
@@ -82,6 +83,14 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     const amountMatch = memo.match(/(\d{1,3}(,\d{3})*|\d+)원/)
     if (amountMatch) {
       amount = parseInt(amountMatch[1].replace(/,/g, ''))
+    }
+
+    // Parse date (MM/DD 형식)
+    const dateMatch = memo.match(/(\d{2}\/\d{2})/)
+    if (dateMatch) {
+      const [month, day] = dateMatch[1].split('/')
+      const year = new Date().getFullYear()
+      date = `${year}-${month}-${day}`
     }
 
     // Parse time (시:분 형식)
@@ -107,7 +116,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
       store = '일시불'
     }
 
-    return { card_type, amount, time, store, usage }
+    return { card_type, amount, time, store, usage, date }
   }
 
   const addTask = async (input: AddTaskInput) => {
@@ -121,7 +130,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
         amount: parsedData.amount,
         time: parsedData.time,
         store: parsedData.store,
-        date: new Date().toLocaleDateString('ko-KR'),
+        date: parsedData.date || new Date().toISOString().split('T')[0], // 날짜가 없는 경우 현재 날짜 사용
         usage: parsedData.usage,
         completed: false
       }
@@ -188,18 +197,15 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
         method: 'PUT',
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to complete tasks')
-      }
-
-      const updatedTasks = await response.json()
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task.store === '일시불' ? { ...task, completed: true } : task
-        )
-      )
-    } catch {
-      console.error('Error completing single payment tasks')
+      if (!response.ok) throw new Error('Failed to complete tasks')
+      
+      // Update local state to mark all single payment tasks as completed
+      setTasks(prev => prev.map(task => 
+        task.store === '일시불' ? { ...task, completed: true } : task
+      ))
+    } catch (error) {
+      console.error('Failed to complete tasks:', error)
+      throw error
     }
   }
 
