@@ -30,7 +30,7 @@ export default function Home() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            Adjustment
+            정산관리
           </h1>
         </div>
         
@@ -91,7 +91,7 @@ export default function Home() {
               className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
               <Plus className="w-5 h-5" />
-              Adjust
+              추가
             </button>
           </div>
           <TaskList />

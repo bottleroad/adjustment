@@ -10,6 +10,7 @@ export interface Task {
   time: string
   store: string
   date: string
+  usage: string
 }
 
 interface AddTaskInput {
@@ -64,7 +65,8 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     let card_type: Task['card_type'] = 'other'
     let amount = 0
     let time = ''
-    let store = '할부' // 기본값을 할부로 설정
+    let store = '할부'
+    let usage = ''
 
     // Parse card type
     for (const [key, value] of Object.entries(cardTypes)) {
@@ -91,7 +93,13 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
       store = '일시불'
     }
 
-    return { card_type, amount, time, store }
+    // Parse usage (마지막 줄을 사용처로 가정)
+    const lines = memo.trim().split('\n')
+    if (lines.length > 0) {
+      usage = lines[lines.length - 1].trim()
+    }
+
+    return { card_type, amount, time, store, usage }
   }
 
   const addTask = async (input: AddTaskInput) => {
@@ -106,6 +114,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
         time: parsedData.time,
         store: parsedData.store,
         date: new Date().toLocaleDateString('ko-KR'),
+        usage: parsedData.usage,
       }
 
       const response = await fetch('/api/tasks', {
