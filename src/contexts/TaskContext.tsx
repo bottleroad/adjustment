@@ -11,6 +11,7 @@ export interface Task {
   store: string
   date: string
   usage: string
+  completed: boolean
 }
 
 interface AddTaskInput {
@@ -23,6 +24,7 @@ interface TaskContextType {
   addTask: (input: AddTaskInput) => Promise<void>
   deleteTask: (taskId: number) => Promise<void>
   deleteAllTasks: () => Promise<void>
+  completeAllSinglePaymentTasks: () => Promise<void>
   totalAmount: number
   cardTotals: Record<string, number>
   isLoading: boolean
@@ -86,17 +88,23 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     const timeMatch = memo.match(/(\d{1,2}:\d{2})/)
     if (timeMatch) {
       time = timeMatch[1]
+      // Parse usage (시간 바로 다음의 문자열만 추출, 줄바꿈 이후는 무시)
+      const timeIndex = memo.indexOf(timeMatch[0])
+      const afterTime = memo.slice(timeIndex + timeMatch[0].length).trim()
+      const firstLineEnd = afterTime.indexOf('\n')
+      
+      if (firstLineEnd === -1) {
+        // 줄바꿈이 없는 경우 전체 문자열 사용
+        usage = afterTime.trim()
+      } else {
+        // 줄바꿈이 있는 경우 첫 줄만 사용
+        usage = afterTime.slice(0, firstLineEnd).trim()
+      }
     }
 
     // 일시불 여부 확인
     if (memo.includes('일시불')) {
       store = '일시불'
-    }
-
-    // Parse usage (마지막 줄을 사용처로 가정)
-    const lines = memo.trim().split('\n')
-    if (lines.length > 0) {
-      usage = lines[lines.length - 1].trim()
     }
 
     return { card_type, amount, time, store, usage }
@@ -115,6 +123,7 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
         store: parsedData.store,
         date: new Date().toLocaleDateString('ko-KR'),
         usage: parsedData.usage,
+        completed: false
       }
 
       const response = await fetch('/api/tasks', {
@@ -173,9 +182,43 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
+  const completeAllSinglePaymentTasks = async () => {
+    try {
+      const response = await fetch('/api/tasks/complete', {
+        method: 'PUT',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to complete tasks')
+      }
+
+      const updatedTasks = await response.json()
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task.store === '일시불' ? { ...task, completed: true } : task
+        )
+      )
+    } catch {
+      console.error('Error completing single payment tasks')
+    }
+  }
+
   // Calculate totals
-  const totalAmount = tasks.reduce((sum, task) => sum + task.amount, 0)
-  const cardTotals = tasks.reduce((totals, task) => {
+  const sortedTasks = [...tasks].sort((a, b) => {
+    // 날짜 비교
+    const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime()
+    if (dateComparison !== 0) return dateComparison
+    
+    // 날짜가 같은 경우 시간 비교
+    const [aHour, aMinute] = a.time.split(':').map(Number)
+    const [bHour, bMinute] = b.time.split(':').map(Number)
+    const timeA = aHour * 60 + aMinute
+    const timeB = bHour * 60 + bMinute
+    return timeB - timeA
+  })
+
+  const totalAmount = sortedTasks.reduce((sum, task) => sum + task.amount, 0)
+  const cardTotals = sortedTasks.reduce((totals, task) => {
     totals[task.card_type] = (totals[task.card_type] || 0) + task.amount
     return totals
   }, {} as Record<string, number>)
@@ -183,10 +226,11 @@ export const TaskProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <TaskContext.Provider
       value={{
-        tasks,
+        tasks: sortedTasks,
         addTask,
         deleteTask,
         deleteAllTasks,
+        completeAllSinglePaymentTasks,
         totalAmount,
         cardTotals,
         isLoading
