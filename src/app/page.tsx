@@ -40,19 +40,40 @@ export default function Home() {
     .reduce((sum, task) => sum + task.amount, 0)
 
   // Calculate monthly totals for the chart
-  const monthlyTotals = tasks.reduce((acc, task) => {
-    const date = new Date(task.date)
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-    acc[monthKey] = (acc[monthKey] || 0) + task.amount
-    return acc
-  }, {} as Record<string, number>)
+  const monthlyTotals = tasks
+    .filter(task => {
+      // 현재 날짜 기준 6개월 전 날짜 계산
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5); // 현재 월 포함하여 6개월이므로 -5
+      sixMonthsAgo.setDate(1); // 해당 월의 1일로 설정
+      sixMonthsAgo.setHours(0, 0, 0, 0);
+
+      const taskDate = new Date(task.date);
+      return task.store === '일시불' && taskDate >= sixMonthsAgo;
+    })
+    .reduce((acc, task) => {
+      const date = new Date(task.date)
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      acc[monthKey] = (acc[monthKey] || 0) + task.amount
+      return acc
+    }, {} as Record<string, number>)
+
+  // 최근 6개월의 모든 월을 포함하도록 빈 데이터 추가
+  const last6Months = Array.from({ length: 6 }, (_, i) => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  }).reverse();
 
   const chartData = {
-    labels: Object.keys(monthlyTotals).sort(),
+    labels: last6Months.map(month => {
+      const [year, monthNum] = month.split('-');
+      return `${year}-${monthNum}`;
+    }),
     datasets: [
       {
-        label: '월별 정산 금액',
-        data: Object.keys(monthlyTotals).sort().map(key => monthlyTotals[key]),
+        label: '월별 일시불 정산 금액',
+        data: last6Months.map(month => monthlyTotals[month] || 0),
         backgroundColor: 'rgba(147, 51, 234, 0.5)',
         borderColor: 'rgb(147, 51, 234)',
         borderWidth: 1,
@@ -68,7 +89,7 @@ export default function Home() {
       },
       title: {
         display: true,
-        text: '월별 정산 금액',
+        text: '최근 6개월 정산 금액',
       },
     },
     scales: {
@@ -109,7 +130,7 @@ export default function Home() {
               className="p-2 text-purple-600 hover:text-white dark:text-purple-400 dark:hover:text-white border-2 border-purple-600 dark:border-purple-400 focus:outline-none rounded-lg hover:bg-gradient-to-r from-purple-600 to-blue-600 dark:hover:bg-gradient-to-r dark:from-purple-600 dark:to-blue-600 transition-all duration-300"
               aria-label="월별 정산 그래프 보기"
             >
-              <BarChart className="w-6 h-6" />
+              <BarChart className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -120,7 +141,7 @@ export default function Home() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                  <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
@@ -137,7 +158,7 @@ export default function Home() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all hover:shadow-xl">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </div>
@@ -170,7 +191,7 @@ export default function Home() {
             </h2>
             <button 
               onClick={() => setIsDialogOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
               <Plus className="w-5 h-5" />
               추가
