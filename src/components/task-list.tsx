@@ -7,8 +7,34 @@ import { Button } from '@/components/ui/button'
 
 type FilterType = 'all' | 'single' | 'installment';
 
+// 스켈레톤 로딩 컴포넌트
+const TaskSkeleton = () => (
+  <div className="animate-pulse space-y-2">
+    {[1, 2, 3].map((i) => (
+      <div
+        key={i}
+        className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+          <div className="mt-1 flex items-center gap-2">
+            <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+        </div>
+        <div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
+      </div>
+    ))}
+  </div>
+);
+
 export default function TaskList() {
-  const { tasks, deleteTask, completeAllSinglePaymentTasks } = useTask()
+  const { tasks, deleteTask, completeAllSinglePaymentTasks, isLoading } = useTask()
   const [filter, setFilter] = useState<FilterType>('all')
 
   const filteredTasks = tasks.filter(task => !task.completed)
@@ -67,52 +93,59 @@ export default function TaskList() {
           </button>
         </div>
       </div>
-      <div className="space-y-2">
-        {filteredTasks.map((task) => (
-          <div
-            key={task.id}
-            className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                {task.store === '일시불' ? (
-                  <CreditCard className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                ) : (
-                  <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                )}
-                <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {task.title}
-                </span>
-                <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                  {new Intl.NumberFormat('ko-KR', {
-                    style: 'currency',
-                    currency: 'KRW',
-                  }).format(task.amount)}
-                </span>
+      
+      {isLoading ? (
+        <TaskSkeleton />
+      ) : (
+        <>
+          <div className="space-y-2">
+            {filteredTasks.map((task) => (
+              <div
+                key={task.id}
+                className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    {task.store === '일시불' ? (
+                      <CreditCard className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    ) : (
+                      <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    )}
+                    <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {task.title}
+                    </span>
+                    <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
+                      {new Intl.NumberFormat('ko-KR', {
+                        style: 'currency',
+                        currency: 'KRW',
+                      }).format(task.amount)}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <span>{task.date}</span>
+                    <span>{task.time}</span>
+                    <span>{task.usage}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDeleteTask(task.id)}
+                  className="ml-4 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 focus:outline-none"
+                  aria-label="항목 삭제"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
-              <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                <span>{task.date}</span>
-                <span>{task.time}</span>
-                <span>{task.usage}</span>
-              </div>
-            </div>
-            <button
-              onClick={() => handleDeleteTask(task.id)}
-              className="ml-4 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 focus:outline-none"
-              aria-label="항목 삭제"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            ))}
           </div>
-        ))}
-      </div>
-      {filter === 'all' && (
-        <Button
-          onClick={handleCompleteAll}
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-        >
-          정산 완료
-        </Button>
+          {filter === 'all' && (
+            <Button
+              onClick={handleCompleteAll}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              정산 완료
+            </Button>
+          )}
+        </>
       )}
     </div>
   )

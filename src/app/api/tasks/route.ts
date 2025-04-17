@@ -4,7 +4,8 @@ export async function GET() {
   try {
     const { data: tasks, error } = await supabase
       .from('tasks')
-      .select('*')
+      .select('id, title, card_type, amount, time, store, date, usage, completed')
+      .eq('completed', false)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
